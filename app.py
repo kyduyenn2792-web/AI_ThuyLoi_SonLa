@@ -73,9 +73,9 @@ with col1:
         # Sửa lỗi nếu tên cột trong Excel có dấu cách thừa
         df.columns = df.columns.str.strip() 
         
-        ten_ho = st.selectbox("Chọn hồ chứa:", df['Tên hồ'].unique())
-        row = df[df['Tên hồ'] == ten_ho].iloc[0]
-        st.info(f"Dung tích: {row['Dung tích']} m3")
+        ten_ho = st.selectbox("Chọn công trình:", df['Tên công trình'].unique())
+        row = df[df['Tên công trình'] == ten_cong_trinh].iloc[0]
+        st.info(f"Dung tích: {row['dung_tich']} m3")
         map_url = f"https://www.google.com/maps?q={row['lat']},{row['lon']}&hl=vi&t=k&z=15&output=embed"
         st.components.v1.iframe(map_url, height=500)
     except Exception as e:
