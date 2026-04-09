@@ -64,14 +64,22 @@ col1, col2 = st.columns([1, 1])
 with col1:
     st.header("📍 Bản đồ Vệ tinh")
     try:
-        df = pd.read_excel("specs/thong_so_ky_thuat.xlsx")
+        # Tự động tìm file .xlsx trong thư mục specs (không cần đúng tên tuyệt đối)
+        file_excel = [f for f in os.listdir("specs") if f.endswith(".xlsx")][0]
+        path_excel = os.path.join("specs", file_excel)
+        
+        df = pd.read_excel(path_excel)
+        
+        # Sửa lỗi nếu tên cột trong Excel có dấu cách thừa
+        df.columns = df.columns.str.strip() 
+        
         ten_ho = st.selectbox("Chọn hồ chứa:", df['Tên hồ'].unique())
         row = df[df['Tên hồ'] == ten_ho].iloc[0]
         st.info(f"Dung tích: {row['Dung tích']} m3")
         map_url = f"https://www.google.com/maps?q={row['lat']},{row['lon']}&hl=vi&t=k&z=15&output=embed"
         st.components.v1.iframe(map_url, height=500)
-    except:
-        st.warning("Đang tải dữ liệu...")
+    except Exception as e:
+        st.warning(f"Chưa tìm thấy file dữ liệu chuẩn: {e}")
 
 with col2:
     st.header("💬 Hỏi đáp AI")
