@@ -110,14 +110,23 @@ with c1:
         df = pd.read_excel(p)
         chon = st.selectbox("Chọn hồ chứa/công trình:", df.iloc[:, 0].tolist())
         row = df[df.iloc[:, 0] == chon].iloc[0]
-        st.warning(f"📌 {chon} | 💧 Dung tích: {row.get('dung_tich', 'N/A')} m3")
+        # --- ĐOẠN HIỂN THỊ THÔNG TIN TỰ ĐỘNG ---
+        st.subheader(f"ℹ️ Thông số kỹ thuật: {ten_ct}")
         
-        # Link nhúng vệ tinh ép kiểu 3D (t=k)
-        lat, lon = row['lat'], row['lon']
-        map_url = f"https://www.google.com/maps?q={lat},{lon}&hl=vi&t=k&z=16&output=embed"
-        st.components.v1.iframe(map_url, height=500)
-    else:
-        st.error("Không tìm thấy file Excel trong thư mục specs!")
+        # Tạo 2 cột nhỏ để hiển thị thông số cho gọn
+        info_col1, info_col2 = st.columns(2)
+        
+        # Lấy danh sách các cột (trừ tọa độ lat, lon để không hiện lên)
+        hien_thi = [c for c in df.columns if c.lower() not in [col_lat.lower(), col_lon.lower()]]
+        
+        for i, col in enumerate(hien_thi):
+            val = row[col]
+            if i % 2 == 0:
+                info_col1.write(f"**{col}:** {val}")
+            else:
+                info_col2.write(f"**{col}:** {val}")
+        
+        st.markdown("---") # Kẻ đường ngang ngăn cách với bản đồ
 
 with c2:
     st.header("💬 Hỏi đáp Trợ lý AI")
