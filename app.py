@@ -9,12 +9,10 @@ st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La", layout="wide"
 
 # --- 2. HÀM TẠO PDF (BẢN FIX LỖI CHIỀU NGANG) ---
 def tao_pdf_bien_ban(tra_loi, cau_hoi, ten_ct):
-    # Khởi tạo PDF, tắt chế độ tự động ngắt trang thông minh (thứ gây lỗi không gian)
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Nạp font chuẩn
     font_name = "Arial"
     if os.path.exists("arial.ttf"):
         try:
@@ -24,7 +22,7 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, ten_ct):
     
     pdf.set_font(font_name, size=12)
 
-    # --- NỘI DUNG BIÊN BẢN ---
+    # --- NỘI DUNG ---
     pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
     pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
     pdf.ln(10)
@@ -34,31 +32,20 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, ten_ct):
     pdf.ln(5)
     
     pdf.set_font(font_name, size=11)
-    
-    # SỬ DỤNG LỆNH WRITE THAY CHO MULTI_CELL ĐỂ CHỐNG LỖI HORIZONTAL SPACE
     pdf.write(8, f"Tên công trình: {ten_ct}\n")
-    pdf.write(8, f"Câu hỏi tra cứu: {cau_hoi}\n")
-    pdf.ln(5)
-    
-    pdf.write(8, "KẾT QUẢ TRA CỨU TỪ HỆ THỐNG AI:\n")
-    pdf.write(8, f"{tra_loi}\n")
+    pdf.write(8, f"Câu hỏi tra cứu: {cau_hoi}\n\n")
+    pdf.write(8, f"KẾT QUẢ TRA CỨU:\n{tra_loi}\n")
     
     pdf.ln(10)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(5)
-
-    # --- PHẦN KÝ TÊN ---
-    pdf.write(8, "- Đại diện Chi nhánh Thủy lợi số 5 (Ký, ghi rõ họ tên)\n\n")
-    pdf.write(8, "- Đại diện UBND phường/bản (Ký, ghi rõ họ tên)\n\n")
-    pdf.write(8, "- Hộ gia đình vi phạm (Ký, ghi rõ họ tên)\n\n")
-    pdf.write(8, "- Cán bộ địa bàn (Ký, ghi rõ họ tên)\n\n")
+    pdf.write(8, "- Đại diện Chi nhánh Thủy lợi số 5 (Ký tên)\n\n")
+    pdf.write(8, "- Đại diện UBND phường/bản (Ký tên)\n\n")
+    pdf.write(8, "- Cán bộ địa bàn (Ký tên)\n")
     
-    pdf.ln(5)
-    pdf.cell(0, 10, txt="Người lập biên bản: ...............................", ln=True, align='R')
+    pdf.ln(10)
     pdf.cell(0, 10, txt="Ngày ..... tháng ..... năm 2026", ln=True, align='R')
-    
-    # Trả về dữ liệu PDF dưới dạng byte
-    return pdf.output(dest='S')
+
+    # --- DÒNG QUAN TRỌNG NHẤT: ÉP VỀ KIỂU BYTES ---
+    return bytes(pdf.output())
 
 # --- 3. HÀM NẠP DỮ LIỆU (FIX LỖI NAMEERROR) ---
 @st.cache_resource
