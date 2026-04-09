@@ -76,3 +76,27 @@ with col2:
                     file_name=f"Bien_ban_{ten_ct}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
+                # --- PHẦN CHIA SẺ THÔNG MINH ---
+                st.divider()
+                word_data = tao_file_word(tra_loi, hoi, ten_ct)
+                
+                # 1. Nút tải truyền thống (để dự phòng)
+                st.download_button(
+                    label="💾 1. Tải file về máy",
+                    data=word_data,
+                    file_name=f"Bien_ban_{ten_ct}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
+                # 2. Mẹo "Chia sẻ nhanh" (Dùng link Zalo)
+                st.markdown(f"""
+                    <a href="https://zalo.me/share?url=https://aithuyloisonla.streamlit.app/&title=Biên bản {ten_ct}" 
+                       target="_blank" 
+                       style="text-decoration: none;">
+                        <div style="background-color: #0068ff; color: white; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold;">
+                            📲 2. Gửi nhanh qua Zalo (Link)
+                        </div>
+                    </a>
+                """, unsafe_allow_code=True)
+                
+                st.caption("⚠️ Lưu ý: Do bảo mật điện thoại, để gửi FILE, ông hãy chọn nút 'Tải về' -> Mở file -> Chọn 'Chia sẻ' -> Chọn Zalo.")
