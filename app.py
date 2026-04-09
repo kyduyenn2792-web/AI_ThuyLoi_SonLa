@@ -9,10 +9,12 @@ st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La AI", layout="wi
 
 # --- 2. HÀM TẠO BIÊN BẢN PDF TIẾNG VIỆT GỬI LÃNH ĐẠO ---
 def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
-    pdf = FPDF()
+    # Khởi tạo PDF với lề rộng 10mm mỗi bên để tránh lỗi không gian
+    pdf = FPDF(unit='mm', format='A4')
+    pdf.set_margins(15, 15, 15) 
     pdf.add_page()
     
-    # Nạp font (không dùng style='B' để tránh lỗi font)
+    # Nạp font chuẩn
     font_name = "Arial"
     try:
         if os.path.exists("arial.ttf"):
@@ -20,46 +22,48 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
             font_name = "ArialVN"
     except: pass
 
-    # --- NỘI DUNG CHÍNH ---
-    pdf.set_font(font_name, size=14)
+    pdf.set_font(font_name, size=12)
+
+    # --- NỘI DUNG CHÍNH (Dùng ln=True và multi_cell 0 để an toàn) ---
     pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
     pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
     pdf.ln(10)
     
-    pdf.set_font(font_name, size=15)
+    pdf.set_font(font_name, size=14)
     pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=True, align='C')
     pdf.ln(5)
     
     pdf.set_font(font_name, size=11)
-    ten_hồ = thong_tin_ct.get('ten', 'N/A')
+    # Lấy tên công trình, nếu không có thì ghi chung chung
+    ten_hồ = thong_tin_ct.get('ten', 'Cong trinh Thuy loi')
+    
+    # Sử dụng multi_cell(0, ...) để nội dung tự xuống dòng, không bao giờ lấn lề
     pdf.multi_cell(0, 8, txt=f"Cong trinh: {ten_hồ}")
-    pdf.multi_cell(0, 8, txt=f"Noi dung: {cau_hoi}")
+    pdf.multi_cell(0, 8, txt=f"Cau hoi: {cau_hoi}")
     pdf.ln(5)
     
-    # Kết quả AI (Dùng 0 để tự động co giãn)
-    pdf.multi_cell(0, 8, txt=f"Ket qua tra cuu: {tra_loi}")
+    pdf.multi_cell(0, 8, txt=f"KET QUA TRA CUU:\n{tra_loi}")
     
     pdf.ln(10)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
     pdf.ln(5)
 
-    # --- PHẦN KÝ TÊN (THAY ĐỔI ĐỂ KHÔNG LỖI CHIỀU NGANG) ---
+    # --- PHẦN KÝ TÊN (LIỆT KÊ DỌC ĐỂ CHỐNG LỖI NGANG) ---
     pdf.set_font(font_name, size=10)
-    pdf.multi_cell(0, 7, txt="- Dai dien Chi nhanh Thuy loi so 5: ................................")
-    pdf.multi_cell(0, 8, txt="- Can bo dia ban: ................................")
-    pdf.multi_cell(0, 8, txt="- Dai dien UBND phuong: ................................")
-    pdf.multi_cell(0, 8, txt="- Dai dien BQL ban Hom: ................................")
-    pdf.multi_cell(0, 8, txt="- Ho gia dinh vi pham: ................................")
+    # Viết từng dòng đơn giản, không chia cột phức tạp
+    cac_ben = [
+        "Đại diện Chi nhánh Thủy lợi số 5: ................................",
+        "Cán bộ địa bàn: ................................................",
+        "Đại diện UBND phường Chiềng Cơi: ...............................",
+        "Đại diện BQL bản Hôm: ...........................................",
+        "Hộ gia đình vi phạm: ............................................",
+        "Ngày lập biên bản: 09/04/2026"
+    ]
     
-    pdf.ln(10)
-    pdf.set_font(font_name, size=11)
-    # Phần chức danh ghi gọn lại
-    pdf.multi_cell(0, 7, txt="TM. UY BAN NHAN DAN PHUONG CHIENG COI", align='R')
-    pdf.multi_cell(0, 7, txt="TRUONG PHONG KTHT&DT", align='R')
-    pdf.ln(15)
-    pdf.multi_cell(0, 7, txt="Nguyen Long Hung", align='R')
-    pdf.cell(0, 10, txt="(Ky, ghi ro ho ten)", ln=True, align='R')
-    
+    for ben in cac_ben:
+        pdf.multi_cell(0, 8, txt=ben)
+        pdf.ln(2)
+
     return pdf.output(dest='S')
 
 # --- 3. HÀM ĐỌC DỮ LIỆU PDF (THÔNG TƯ, NGHỊ ĐỊNH) ---
