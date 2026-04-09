@@ -2,69 +2,11 @@ import streamlit as st
 import pandas as pd
 import os
 from openai import OpenAI
+import os
 from fpdf import FPDF
 
-# --- HÀM TẠO FILE PDF TIẾNG VIỆT CHUẨN ---
-def tao_pdf_unicode(tra_loi, cau_hoi):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Nạp font Arial để viết được tiếng Việt có dấu
-    # Đảm bảo bạn đã upload file arial.ttf lên GitHub cùng cấp với app.py
-    if os.path.exists("arial.ttf"):
-        pdf.add_font("ArialVN", "", "arial.ttf")
-        font_name = "ArialVN"
-    else:
-        font_name = "Arial" # Dự phòng nếu quên chưa up font
-
-    # Tiêu đề báo cáo
-    pdf.set_font(font_name, size=16)
-    pdf.cell(0, 10, txt="CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", ln=True, align='C')
-    pdf.set_font(font_name, size=12)
-    pdf.cell(0, 10, txt="Độc lập - Tự do - Hạnh phúc", ln=True, align='C')
-    pdf.ln(10)
-    
-    pdf.set_font(font_name, size=15)
-    pdf.cell(0, 10, txt="BIÊN BẢN TRA CỨU NGHIỆP VỤ THỦY LỢI", ln=True, align='C')
-    pdf.ln(10)
-    
-    # Nội dung câu hỏi
-    pdf.set_font(font_name, size=12)
-    pdf.multi_cell(0, 10, txt=f"Nội dung câu hỏi: {cau_hoi}")
-    pdf.ln(5)
-    
-    # Nội dung trả lời từ AI
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y()) # Kẻ đường ngang phân cách
-    pdf.ln(5)
-    pdf.multi_cell(0, 10, txt=f"Kết quả trả cứu từ hệ thống AI:\n\n{tra_loi}")
-    
-    # Chân trang
-    pdf.ln(20)
-    pdf.cell(0, 10, txt="Người lập báo cáo: Trợ lý AI Thủy Lợi Sơn La", ln=True, align='R')
-    
-    # Xuất file dạng bytes để Streamlit có thể tải về
-    return pdf.output(dest='S')
-
-# --- TRONG PHẦN HIỂN THỊ CÂU TRẢ LỜI ---
-if "ready" in st.session_state:
-    # ... (Sau khi AI trả lời xong và gán vào biến 'tra_loi') ...
-    st.markdown("### 🤖 Trả lời từ ChatGPT:")
-    st.write(tra_loi)
-    
-    # NÚT XUẤT FILE PDF XỊN
-    try:
-        pdf_data = tao_pdf_unicode(tra_loi, hoi)
-        st.download_button(
-            label="📥 Tải Biên bản Tiếng Việt (PDF)",
-            data=pdf_data,
-            file_name="bien_ban_thuy_loi.pdf",
-            mime="application/pdf"
-        )
-    except Exception as e:
-        st.error(f"Lỗi xuất PDF: {e}")
-
-st.set_page_config(page_title="AI Thủy Lợi - ChatGPT Pro", layout="wide")
-st.title("🌊 Trợ lý AI Ngành Thủy Lợi (Phiên bản ChatGPT)")
+st.set_page_config(page_title="AI Thủy Lợi", layout="wide")
+st.title("🌊 Trợ lý AI Ngành Thủy Lợi ")
 
 # --- HÀM ĐỌC PDF (Xử lý thông minh) ---
 def doc_pdf_thuy_loi():
@@ -82,7 +24,40 @@ def doc_pdf_thuy_loi():
                     if text: context += f"--- Tài liệu {file} ---\n{text}\n"
             except: continue
     return context
+def tao_pdf_unicode(tra_loi, cau_hoi):
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Kiểm tra và nạp font Arial để viết tiếng Việt
+    if os.path.exists("arial.ttf"):
+        pdf.add_font("ArialVN", "", "arial.ttf")
+        font_name = "ArialVN"
+    else:
+        font_name = "Arial"
 
+    # Tiêu đề báo cáo
+    pdf.set_font(font_name, size=16)
+    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
+    pdf.set_font(font_name, size=12)
+    pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font(font_name, size=15)
+    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Nội dung
+    pdf.set_font(font_name, size=12)
+    pdf.multi_cell(0, 10, txt=f"Noi dung cau hoi: {cau_hoi}")
+    pdf.ln(5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, txt=f"Ket qua tra cuu tu he thong AI:\n\n{tra_loi}")
+    
+    pdf.ln(20)
+    pdf.cell(0, 10, txt="Nguoi lap: Tro ly AI Thuy Loi Son La", ln=True, align='R')
+    
+    return pdf.output(dest='S')
 # --- THANH BÊN (SIDEBAR) ---
 with st.sidebar:
     st.header("🔑 Cấu hình OpenAI")
@@ -110,23 +85,14 @@ with c1:
         df = pd.read_excel(p)
         chon = st.selectbox("Chọn hồ chứa/công trình:", df.iloc[:, 0].tolist())
         row = df[df.iloc[:, 0] == chon].iloc[0]
-        # --- ĐOẠN HIỂN THỊ THÔNG TIN TỰ ĐỘNG ---
-        st.subheader(f"ℹ️ Thông số kỹ thuật: {ten_ct}")
+        st.warning(f"📌 {chon} | 💧 Dung tích: {row.get('dung_tich', 'N/A')} m3")
         
-        # Tạo 2 cột nhỏ để hiển thị thông số cho gọn
-        info_col1, info_col2 = st.columns(2)
-        
-        # Lấy danh sách các cột (trừ tọa độ lat, lon để không hiện lên)
-        hien_thi = [c for c in df.columns if c.lower() not in [col_lat.lower(), col_lon.lower()]]
-        
-        for i, col in enumerate(hien_thi):
-            val = row[col]
-            if i % 2 == 0:
-                info_col1.write(f"**{col}:** {val}")
-            else:
-                info_col2.write(f"**{col}:** {val}")
-        
-        st.markdown("---") # Kẻ đường ngang ngăn cách với bản đồ
+        # Link nhúng vệ tinh ép kiểu 3D (t=k)
+        lat, lon = row['lat'], row['lon']
+        map_url = f"https://www.google.com/maps?q={lat},{lon}&hl=vi&t=k&z=16&output=embed"
+        st.components.v1.iframe(map_url, height=500)
+    else:
+        st.error("Không tìm thấy file Excel trong thư mục specs!")
 
 with c2:
     st.header("💬 Hỏi đáp Trợ lý AI")
@@ -146,7 +112,24 @@ with c2:
                     st.markdown("---")
                     st.markdown("### 🤖 Trả lời từ ChatGPT:")
                     st.write(response.choices[0].message.content)
-                except Exception as e:
+        except Exception as e:
+            # Giả sử nội dung AI trả lời bạn đang lưu vào biến 'tra_loi'
+        tra_loi = response.choices[0].message.content # Đây là dòng bạn đã có
+        
+        st.markdown("---") # Kẻ đường ngang cho đẹp
+        try:
+            # Gọi hàm tạo PDF
+            pdf_data = tao_pdf_unicode(tra_loi, hoi)
+            
+            # Hiển thị nút tải về
+            st.download_button(
+                label="📥 Tải Biên bản Báo cáo (PDF)",
+                data=pdf_data,
+                file_name="bien_ban_thuy_loi.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.warning("Đang chuẩn bị tính năng xuất PDF...")
                     st.error(f"Lỗi khi gọi ChatGPT: {e}")
         else:
             st.info("Hãy nhập API Key và nhấn 'Kích hoạt' ở bên trái.")
