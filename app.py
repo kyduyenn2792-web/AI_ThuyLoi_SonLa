@@ -12,7 +12,7 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
     pdf = FPDF()
     pdf.add_page()
     
-    # Nạp font (không dùng style='B' để tránh lỗi)
+    # Nạp font (không dùng style='B' để tránh lỗi font)
     font_name = "Arial"
     try:
         if os.path.exists("arial.ttf"):
@@ -20,41 +20,45 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
             font_name = "ArialVN"
     except: pass
 
-    # --- NỘI DUNG BIÊN BẢN ---
+    # --- NỘI DUNG CHÍNH ---
     pdf.set_font(font_name, size=14)
     pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
     pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
     pdf.ln(10)
     
-    pdf.set_font(font_name, size=16)
-    pdf.cell(0, 10, txt="BIEN BAN TRA CUU & BAO CAO NGHIEP VU", ln=True, align='C')
+    pdf.set_font(font_name, size=15)
+    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=True, align='C')
     pdf.ln(5)
     
     pdf.set_font(font_name, size=11)
-    ten = thong_tin_ct.get('ten', 'N/A')
-    pdf.multi_cell(0, 8, txt=f"Ten cong trinh: {ten}")
+    ten_hồ = thong_tin_ct.get('ten', 'N/A')
+    pdf.multi_cell(0, 8, txt=f"Cong trinh: {ten_hồ}")
     pdf.multi_cell(0, 8, txt=f"Noi dung: {cau_hoi}")
     pdf.ln(5)
     
-    pdf.multi_cell(0, 8, txt=f"Ket qua tu AI:\n{tra_loi}")
+    # Kết quả AI (Dùng 0 để tự động co giãn)
+    pdf.multi_cell(0, 8, txt=f"Ket qua tra cuu: {tra_loi}")
     
     pdf.ln(10)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(5)
 
-    # --- PHẦN KÝ TÊN (DÀN HÀNG DỌC CHỐNG LỖI) ---
-    pdf.set_font(font_name, size=11)
-    pdf.cell(0, 8, txt="- Dai dien Chi nhanh Thuy loi so 5 (Ky, ghi ro ho ten)", ln=True)
-    pdf.ln(5)
-    pdf.cell(0, 8, txt="- Dai dien UBND Phuong/Ban (Ky, ghi ro ho ten)", ln=True)
-    pdf.ln(5)
-    pdf.cell(0, 8, txt="- Ho gia dinh vi pham (Ky, ghi ro ho ten)", ln=True)
-    pdf.ln(5)
-    pdf.cell(0, 8, txt="- Can bo dia ban (Ky, ghi ro ho ten)", ln=True)
+    # --- PHẦN KÝ TÊN (THAY ĐỔI ĐỂ KHÔNG LỖI CHIỀU NGANG) ---
+    pdf.set_font(font_name, size=10)
+    pdf.multi_cell(0, 7, txt="- Dai dien Chi nhanh Thuy loi so 5: ................................")
+    pdf.multi_cell(0, 8, txt="- Can bo dia ban: ................................")
+    pdf.multi_cell(0, 8, txt="- Dai dien UBND phuong: ................................")
+    pdf.multi_cell(0, 8, txt="- Dai dien BQL ban Hom: ................................")
+    pdf.multi_cell(0, 8, txt="- Ho gia dinh vi pham: ................................")
     
     pdf.ln(10)
-    pdf.cell(0, 10, txt="Ngay ..... thang ..... nam 2026", ln=True, align='R')
-    pdf.cell(0, 10, txt="Nguoi lap bien ban: ...............................", ln=True, align='R')
+    pdf.set_font(font_name, size=11)
+    # Phần chức danh ghi gọn lại
+    pdf.multi_cell(0, 7, txt="TM. UY BAN NHAN DAN PHUONG CHIENG COI", align='R')
+    pdf.multi_cell(0, 7, txt="TRUONG PHONG KTHT&DT", align='R')
+    pdf.ln(15)
+    pdf.multi_cell(0, 7, txt="Nguyen Long Hung", align='R')
+    pdf.cell(0, 10, txt="(Ky, ghi ro ho ten)", ln=True, align='R')
     
     return pdf.output(dest='S')
 
