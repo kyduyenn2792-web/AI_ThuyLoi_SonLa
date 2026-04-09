@@ -11,41 +11,66 @@ st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La AI", layout="wi
 def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
     pdf = FPDF()
     pdf.add_page()
-    # Yêu cầu file arial.ttf phải có trên GitHub để hiện tiếng Việt
-    if os.path.exists("arial.ttf"):
-        pdf.add_font("ArialVN", "", "arial.ttf")
-        font_name = "ArialVN"
-    else:
-        font_name = "Arial"
     
-    # Quốc hiệu
-    pdf.set_font(font_name, size=14)
-    pdf.cell(0, 10, txt="CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", ln=True, align='C')
-    pdf.set_font(font_name, size=12)
-    pdf.cell(0, 10, txt="Độc lập - Tự do - Hạnh phúc", ln=True, align='C')
+    # Cố gắng nạp font Arial để viết tiếng Việt
+    font_name = "Arial"
+    try:
+        if os.path.exists("arial.ttf"):
+            pdf.add_font("ArialVN", "", "arial.ttf")
+            font_name = "ArialVN"
+    except Exception as e:
+        pass # Nếu font lỗi, tự dùng font mặc định để app không bị sập
+
+    # --- QUỐC HIỆU ---
+    pdf.set_font(font_name, size=12, style='B')
+    pdf.cell(0, 7, txt="CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", ln=True, align='C')
+    pdf.set_font(font_name, size=11, style='U')
+    pdf.cell(0, 7, txt="Độc lập - Tự do - Hạnh phúc", ln=True, align='C')
     pdf.ln(10)
     
-    # Tiêu đề
-    pdf.set_font(font_name, size=16)
+    # --- TIÊU ĐỀ ---
+    pdf.set_font(font_name, size=14, style='B')
     pdf.cell(0, 10, txt="BIÊN BẢN TRA CỨU & BÁO CÁO NGHIỆP VỤ", ln=True, align='C')
     pdf.ln(5)
     
-    # Thông tin công trình
-    pdf.set_font(font_name, size=12)
-    pdf.cell(0, 10, txt=f"Tên công trình: {thong_tin_ct.get('ten', 'N/A')}", ln=True)
-    pdf.cell(0, 10, txt=f"Vị trí: {thong_tin_ct.get('vi_tri', 'N/A')}", ln=True)
-    pdf.cell(0, 10, txt=f"Dung tích thiết kế: {thong_tin_ct.get('dung_tich', 'N/A')}", ln=True)
+    # --- THÔNG TIN CÔNG TRÌNH ---
+    pdf.set_font(font_name, size=11)
+    # Lấy tên công trình từ dictionary thong_tin_ct
+    ten = thong_tin_ct.get('ten', 'N/A')
+    pdf.multi_cell(0, 7, txt=f"Tên công trình: {ten}")
+    pdf.multi_cell(0, 7, txt=f"Nội dung tra cứu: {cau_hoi}")
+    pdf.ln(5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y()) # Kẻ đường ngang
     pdf.ln(5)
     
-    # Nội dung hỏi đáp
-    pdf.set_font(font_name, size=12)
-    pdf.multi_cell(0, 10, txt=f"Nội dung yêu cầu tra cứu: {cau_hoi}")
-    pdf.ln(5)
-    pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 10, txt=f"Kết quả trích xuất (Thông tư/Nghị định/Luật):\n\n{tra_loi}")
+    # --- KẾT QUẢ ---
+    pdf.set_font(font_name, size=11, style='B')
+    pdf.cell(0, 7, txt="Kết quả từ hệ thống Trợ lý AI:", ln=True)
+    pdf.set_font(font_name, size=11)
+    pdf.multi_cell(0, 7, txt=tra_loi)
     
-    pdf.ln(20)
-    pdf.cell(0, 10, txt="Người lập báo cáo: Trợ lý AI Thủy Lợi", ln=True, align='R')
+    pdf.ln(15)
+    
+    # --- PHẦN KÝ TÊN (CHIA 2 CỘT) ---
+    y_truoc_ky = pdf.get_y()
+    pdf.set_font(font_name, size=10, style='B')
+    
+    # Cột trái
+    pdf.set_x(15)
+    pdf.multi_cell(80, 5, txt="Đại diện Chi nhánh Thủy lợi\n(Ký, ghi rõ họ tên)", align='C')
+    
+    # Cột phải (UBND Phường)
+    pdf.set_y(y_truoc_ky)
+    pdf.set_x(110)
+    pdf.multi_cell(80, 5, txt="Đại diện UBND Phường/Bản\n(Ký, ghi rõ họ tên)", align='C')
+    
+    pdf.ln(15)
+    
+    # Dòng cuối
+    pdf.set_font(font_name, size=10, style='I')
+    pdf.cell(0, 10, txt="Ngày ..... tháng ..... năm 2026", ln=True, align='R')
+    pdf.set_font(font_name, size=10, style='B')
+    pdf.cell(0, 5, txt="Người lập biên bản: .......................................", ln=True, align='R')
     
     return pdf.output(dest='S')
 
