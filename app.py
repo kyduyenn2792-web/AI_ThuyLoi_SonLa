@@ -12,15 +12,15 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
     pdf = FPDF()
     pdf.add_page()
     
+    # Nạp font (không dùng style='B' để tránh lỗi)
     font_name = "Arial"
     try:
         if os.path.exists("arial.ttf"):
             pdf.add_font("ArialVN", "", "arial.ttf")
             font_name = "ArialVN"
-    except:
-        pass
+    except: pass
 
-    # Tiêu đề (Bỏ 'B' để tránh lỗi Undefined font)
+    # --- NỘI DUNG BIÊN BẢN ---
     pdf.set_font(font_name, size=14)
     pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
     pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
@@ -32,19 +32,29 @@ def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
     
     pdf.set_font(font_name, size=11)
     ten = thong_tin_ct.get('ten', 'N/A')
-    pdf.multi_cell(0, 7, txt=f"Ten cong trinh: {ten}")
-    pdf.multi_cell(0, 7, txt=f"Noi dung: {cau_hoi}")
+    pdf.multi_cell(0, 8, txt=f"Ten cong trinh: {ten}")
+    pdf.multi_cell(0, 8, txt=f"Noi dung: {cau_hoi}")
     pdf.ln(5)
-    pdf.multi_cell(0, 7, txt=f"Ket qua AI: {tra_loi}")
     
-    pdf.ln(15)
-    # Phần ký tên (Bỏ 'B')
-    pdf.multi_cell(0, 7, txt="Dai dien Chi nhanh Thuy loi so 5 (Ky ten)")
-    pdf.multi_cell(0, 7, txt="Dai dien UBND Phuong/Ban (Ky ten)")
-    pdf.multi_cell(0, 7, txt="Ho gia dinh vi pham (Ky ten)")
+    pdf.multi_cell(0, 8, txt=f"Ket qua tu AI:\n{tra_loi}")
+    
+    pdf.ln(10)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(5)
+
+    # --- PHẦN KÝ TÊN (DÀN HÀNG DỌC CHỐNG LỖI) ---
+    pdf.set_font(font_name, size=11)
+    pdf.cell(0, 8, txt="- Dai dien Chi nhanh Thuy loi so 5 (Ky, ghi ro ho ten)", ln=True)
+    pdf.ln(5)
+    pdf.cell(0, 8, txt="- Dai dien UBND Phuong/Ban (Ky, ghi ro ho ten)", ln=True)
+    pdf.ln(5)
+    pdf.cell(0, 8, txt="- Ho gia dinh vi pham (Ky, ghi ro ho ten)", ln=True)
+    pdf.ln(5)
+    pdf.cell(0, 8, txt="- Can bo dia ban (Ky, ghi ro ho ten)", ln=True)
     
     pdf.ln(10)
     pdf.cell(0, 10, txt="Ngay ..... thang ..... nam 2026", ln=True, align='R')
+    pdf.cell(0, 10, txt="Nguoi lap bien ban: ...............................", ln=True, align='R')
     
     return pdf.output(dest='S')
 
