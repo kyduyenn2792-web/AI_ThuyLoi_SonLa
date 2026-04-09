@@ -8,44 +8,116 @@ from fpdf import FPDF
 st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La", layout="wide")
 
 # --- 2. HÀM TẠO PDF (BẢN FIX LỖI CHIỀU NGANG) ---
-def tao_pdf_bien_ban(tra_loi, cau_hoi, ten_ct):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    
-    font_name = "Arial"
-    if os.path.exists("arial.ttf"):
-        try:
-            pdf.add_font("ArialVN", "", "arial.ttf")
-            font_name = "ArialVN"
-        except: pass
-    
-    pdf.set_font(font_name, size=12)
+import streamlit as st
+import pandas as pd
+from openai import OpenAI
+import os
+from docx import Document
+from io import BytesIO
 
-    # --- NỘI DUNG ---
-    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
-    pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
-    pdf.ln(10)
-    
-    pdf.set_font(font_name, size=14)
-    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU", ln=True, align='C')
-    pdf.ln(5)
-    
-    pdf.set_font(font_name, size=11)
-    pdf.write(8, f"Tên công trình: {ten_ct}\n")
-    pdf.write(8, f"Câu hỏi tra cứu: {cau_hoi}\n\n")
-    pdf.write(8, f"KẾT QUẢ TRA CỨU:\n{tra_loi}\n")
-    
-    pdf.ln(10)
-    pdf.write(8, "- Đại diện Chi nhánh Thủy lợi số 5 (Ký tên)\n\n")
-    pdf.write(8, "- Đại diện UBND phường/bản (Ký tên)\n\n")
-    pdf.write(8, "- Cán bộ địa bàn (Ký tên)\n")
-    
-    pdf.ln(10)
-    pdf.cell(0, 10, txt="Ngày ..... tháng ..... năm 2026", ln=True, align='R')
+# --- 1. CẤU HÌNH ---
+st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La", layout="wide")
 
-    # --- DÒNG QUAN TRỌNG NHẤT: ÉP VỀ KIỂU BYTES ---
-    return bytes(pdf.output())
+# --- 2. HÀM TẠO FILE WORD (DỄ SỬA, KHÔNG LỖI FONT) ---
+def tao_file_word(tra_loi, cau_hoi, ten_ct):
+    doc = Document()
+    
+    # Tiêu đề quốc hiệu
+    p = doc.add_paragraph()
+    p.alignment = 1 # Căn giữa
+    run = p.add_run("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n")
+    run.bold = True
+    
+    doc.add_heading("BIÊN BẢN TRA CỨU NGHIỆP VỤ THỦY LỢI", level=1).alignment = 1
+    
+    doc.add_paragraph(f"Tên công trình: {ten_ct}")
+    doc.add_paragraph(f"Nội dung câu hỏi: {cau_hoi}")
+    doc.add_paragraph("-" * 20)
+    
+    # Nội dung AI trả lời
+    doc.add_heading("KẾT QUẢ TRA CỨU (Cần rà soát lại):", level=2)
+    doc.add_paragraph(tra_loi)
+    
+    doc.add_paragraph("\n" + "_" * 30)
+    doc.add_paragraph("Đại diện Chi nhánh Thủy lợi số 5: ....................................")
+    doc.add_paragraph("Đại diện UBND phường/bản: ........................................")
+    doc.add_paragraph("Cán bộ địa bàn: .................................................")
+    doc.add_paragraph("Hộ gia đình vi phạm: .............................................")
+    
+    p_date = doc.add_paragraph(f"\nNgày lập biên bản: {pd.Timestamp.now().strftime('%d/%m/%Y')}")
+    p_date.alignment = 2 # Căn phải
+    
+    # Lưu vào bộ nhớ đệm để Streamlit tải về
+    bio = BytesIO()
+    doc.save(bio)
+    return bio.getvalue()
+
+# --- 3. HÀM NẠP DỮ LIỆU ---
+@st.cache_resource
+def nap_du_lieu():
+    context = ""
+    if os.path.exists("data"):
+        from pypdf import PdfReader
+        for file in os.listdir("data"):
+            if file.endswith(".pdf"):
+                try:
+                    reader = PdfReader(os.path.join("data", file))
+                    for page in reader.pages: context += page.extract_text() + "\n"
+                except: continue
+    return context
+
+# --- 4. HỆ THỐNG ---
+if "OPENAI_API_KEY" in st.secrets:
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    context_data = nap_du_lieu()
+else:
+    st.error("Chưa có API Key!")
+    st.stop()
+
+# --- 5. GIAO DIỆN ---
+st.title("🌊 Trợ lý AI Thủy Lợi (Xuất file Word)")
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.header("📍 Thông số & Bản đồ")
+    try:
+        file_excel = [f for f in os.listdir("specs") if f.endswith(".xlsx")][0]
+        df = pd.read_excel(os.path.join("specs", file_excel))
+        df.columns = df.columns.str.strip()
+        col_ten = df.select_dtypes(include=['object']).columns[0]
+        ten_ct = st.selectbox("Chọn công trình:", df[col_ten].unique())
+        row = df[df[col_ten] == ten_ct].iloc[0]
+        for c in df.columns:
+            if c.lower() not in ['lat', 'vĩ', 'lon', 'kinh']:
+                st.write(f"**{c}:** {row[c]}")
+        map_url = f"https://www.google.com/maps?q={row.get('lat', 21.3)},{row.get('lon', 103.9)}&output=embed&t=k"
+        st.components.v1.iframe(map_url, height=400)
+    except: st.warning("Đang tải dữ liệu...")
+
+with col2:
+    st.header("💬 Hỏi đáp & Trích xuất")
+    hoi = st.text_input("Nhập câu hỏi để AI soạn thảo:")
+    if hoi:
+        with st.spinner("AI đang soạn thảo biên bản..."):
+            res = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": f"Dữ liệu: {context_data[:3000]}"},
+                    {"role": "user", "content": hoi}
+                ]
+            )
+            tra_loi = res.choices[0].message.content
+            st.write(tra_loi)
+            
+            # NÚT TẢI FILE WORD
+            st.markdown("---")
+            word_data = tao_file_word(tra_loi, hoi, ten_ct)
+            st.download_button(
+                label="📥 Tải Biên bản (File Word để sửa)",
+                data=word_data,
+                file_name=f"Bien_ban_{ten_ct}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
 
 # --- 3. HÀM NẠP DỮ LIỆU (FIX LỖI NAMEERROR) ---
 @st.cache_resource
