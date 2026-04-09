@@ -8,78 +8,59 @@ from fpdf import FPDF
 st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La AI", layout="wide")
 
 # --- 2. HÀM TẠO BIÊN BẢN PDF TIẾNG VIỆT GỬI LÃNH ĐẠO ---
+from fpdf import FPDF # Đảm bảo dòng này ở trên đầu file
+
 def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
-    # Khởi tạo PDF với lề rộng 10mm mỗi bên để tránh lỗi không gian
-    pdf = FPDF(unit='mm', format='A4')
-    pdf.set_margins(15, 15, 15) 
+    # Khởi tạo PDF bản tiêu chuẩn
+    pdf = FPDF()
     pdf.add_page()
     
-    # Nạp font chuẩn
+    # Nạp font chuẩn (Bỏ qua kiểm tra lỗi rườm rà)
+    font_path = "arial.ttf"
     font_name = "Arial"
-    try:
-        if os.path.exists("arial.ttf"):
-            pdf.add_font("ArialVN", "", "arial.ttf")
+    if os.path.exists(font_path):
+        try:
+            pdf.add_font("ArialVN", "", font_path, unicode=True)
             font_name = "ArialVN"
-    except: pass
-
+        except: pass
+    
     pdf.set_font(font_name, size=12)
 
-    # --- NỘI DUNG CHÍNH (Dùng ln=True và multi_cell 0 để an toàn) ---
-    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
-    pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
+    # --- NỘI DUNG ---
+    # Dùng w=0 để nó tự lấy toàn bộ chiều ngang, ln=1 để xuống dòng
+    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=1, align='C')
+    pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=1, align='C')
     pdf.ln(10)
     
     pdf.set_font(font_name, size=14)
-    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=True, align='C')
+    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=1, align='C')
     pdf.ln(5)
     
     pdf.set_font(font_name, size=11)
-    # Lấy tên công trình, nếu không có thì ghi chung chung
-    ten_hồ = thong_tin_ct.get('ten', 'Cong trinh Thuy loi')
+    ten_ho = thong_tin_ct.get('ten', 'Cong trinh Thuy loi')
     
-    # Sử dụng multi_cell(0, ...) để nội dung tự xuống dòng, không bao giờ lấn lề
-    pdf.multi_cell(0, 8, txt=f"Cong trinh: {ten_hồ}")
-    pdf.multi_cell(0, 8, txt=f"Cau hoi: {cau_hoi}")
+    # Ghi đè trực tiếp nội dung
+    pdf.write(8, f"Cong trinh: {ten_ho}\n")
+    pdf.write(8, f"Cau hoi: {cau_hoi}\n")
     pdf.ln(5)
-    
-    pdf.multi_cell(0, 8, txt=f"KET QUA TRA CUU:\n{tra_loi}")
+    pdf.write(8, f"KET QUA TRA CUU:\n{tra_loi}\n")
     
     pdf.ln(10)
-    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    pdf.cell(0, 0, "", "T") # Vẽ đường kẻ ngang
     pdf.ln(5)
 
-    # --- PHẦN KÝ TÊN (LIỆT KÊ DỌC ĐỂ CHỐNG LỖI NGANG) ---
-    pdf.set_font(font_name, size=10)
-    # Viết từng dòng đơn giản, không chia cột phức tạp
-    cac_ben = [
-        "Đại diện Chi nhánh Thủy lợi số 5: ................................",
-        "Cán bộ địa bàn: ................................................",
-        "Đại diện UBND phường Chiềng Cơi: ...............................",
-        "Đại diện BQL bản Hôm: ...........................................",
-        "Hộ gia đình vi phạm: ............................................",
-        "Ngày lập biên bản: 09/04/2026"
-    ]
+    # --- PHẦN KÝ TÊN (Dùng write để chống lỗi tràn lề) ---
+    pdf.write(8, "- Dai dien Chi nhanh Thuy loi so 5: ................................\n")
+    pdf.write(8, "- Can bo dia ban: ................................................\n")
+    pdf.write(8, "- Dai dien UBND phuong Chieng Coi: ...............................\n")
+    pdf.write(8, "- Dai dien BQL ban Hom: ...........................................\n")
+    pdf.write(8, "- Ho gia dinh vi pham: ............................................\n")
+    pdf.write(8, f"- Ngay lap bien ban: {pd.Timestamp.now().strftime('%d/%m/%Y')}\n")
     
-    for ben in cac_ben:
-        pdf.multi_cell(0, 8, txt=ben)
-        pdf.ln(2)
-
-    return pdf.output(dest='S')
-
-# --- 3. HÀM ĐỌC DỮ LIỆU PDF (THÔNG TƯ, NGHỊ ĐỊNH) ---
-@st.cache_resource
-def nap_du_lieu_van_ban():
-    context = ""
-    if os.path.exists("data"):
-        from pypdf import PdfReader
-        for file in os.listdir("data"):
-            if file.endswith(".pdf"):
-                try:
-                    reader = PdfReader(os.path.join("data", file))
-                    for page in reader.pages:
-                        context += page.extract_text() + "\n"
-                except: continue
-    return context
+    pdf.ln(10)
+    pdf.cell(0, 10, txt="Nguoi lap bien ban: ...............................", ln=1, align='R')
+    
+    return pdf.output(dest='S').encode('latin-1') # Quan trọng: Encode để Streamlit nhận dạng
 
 # --- 4. KIỂM TRA KEY & DỮ LIỆU ---
 if "OPENAI_API_KEY" in st.secrets:
