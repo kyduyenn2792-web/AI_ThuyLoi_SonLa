@@ -4,3 +4,4 @@ openpyxl
 openai
 pypdf
 requests
+fpdf2
