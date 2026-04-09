@@ -24,22 +24,19 @@ def doc_pdf_thuy_loi():
             except: continue
     return context
 
-# --- THANH BÊN (SIDEBAR) ---
+# --- THANH BÊN (SIDEBAR) MỚI ---
 with st.sidebar:
-    st.header("🔑 Cấu hình OpenAI")
-    key = st.text_input("Dán mã sk-... vào đây:", type="password")
-    if st.button("Kích hoạt Trợ lý"):
-        if key.startswith("sk-"):
-            try:
-                st.session_state.client = OpenAI(api_key=key)
-                with st.spinner("Đang nạp dữ liệu thủy lợi..."):
-                    st.session_state.context = doc_pdf_thuy_loi()
-                st.session_state.ready = True
-                st.success("✅ ChatGPT đã sẵn sàng phục vụ!")
-            except Exception as e:
-                st.error(f"Lỗi: {e}")
-        else:
-            st.error("Vui lòng dán đúng mã API Key bắt đầu bằng 'sk-'")
+    st.header("🔑 Trạng thái Hệ thống")
+    # Tự động lấy Key từ Secrets
+    if "OPENAI_API_KEY" in st.secrets:
+        st.session_state.client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+        if "context" not in st.session_state:
+            with st.spinner("Đang nạp dữ liệu..."):
+                st.session_state.context = doc_pdf_thuy_loi()
+        st.session_state.ready = True
+        st.success("✅ Hệ thống đang hoạt động")
+    else:
+        st.error("Chưa cấu hình API Key trong Secrets!")
 
 # --- GIAO DIỆN CHÍNH ---
 c1, c2 = st.columns([1, 1])
