@@ -3,7 +3,8 @@ import pandas as pd
 import os
 from openai import OpenAI
 import pypdf
-
+import os
+from fpdf import FPDF
 st.set_page_config(page_title="AI Thủy Lợi - ChatGPT Pro", layout="wide")
 st.title("🌊 Trợ lý AI Ngành Thủy Lợi")
 
@@ -23,7 +24,40 @@ def doc_pdf_thuy_loi():
                     if text: context += f"--- Tài liệu {file} ---\n{text}\n"
             except: continue
     return context
+def tao_pdf_unicode(tra_loi, cau_hoi):
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Kiểm tra và nạp font Arial để viết tiếng Việt
+    if os.path.exists("arial.ttf"):
+        pdf.add_font("ArialVN", "", "arial.ttf")
+        font_name = "ArialVN"
+    else:
+        font_name = "Arial"
 
+    # Tiêu đề báo cáo
+    pdf.set_font(font_name, size=16)
+    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
+    pdf.set_font(font_name, size=12)
+    pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font(font_name, size=15)
+    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Nội dung
+    pdf.set_font(font_name, size=12)
+    pdf.multi_cell(0, 10, txt=f"Noi dung cau hoi: {cau_hoi}")
+    pdf.ln(5)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, txt=f"Ket qua tra cuu tu he thong AI:\n\n{tra_loi}")
+    
+    pdf.ln(20)
+    pdf.cell(0, 10, txt="Nguoi lap: Tro ly AI Thuy Loi Son La", ln=True, align='R')
+    
+    return pdf.output(dest='S')
 # --- THANH BÊN (SIDEBAR) MỚI ---
 with st.sidebar:
     st.header("🔑 Trạng thái Hệ thống")
@@ -74,7 +108,23 @@ with c2:
                     )
                     st.markdown("---")
                     st.markdown("### 🤖 Trả lời từ ChatGPT:")
-                    st.write(response.choices[0].message.content)
+                    st.write(response.choices[0].message.content) # Giả sử nội dung AI trả lời bạn đang lưu vào biến 'tra_loi'
+        tra_loi = response.choices[0].message.content # Đây là dòng bạn đã có
+        
+        st.markdown("---") # Kẻ đường ngang cho đẹp
+        try:
+            # Gọi hàm tạo PDF
+            pdf_data = tao_pdf_unicode(tra_loi, hoi)
+            
+            # Hiển thị nút tải về
+            st.download_button(
+                label="📥 Tải Biên bản Báo cáo (PDF)",
+                data=pdf_data,
+                file_name="bien_ban_thuy_loi.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.warning("Đang chuẩn bị tính năng xuất PDF...")
                 except Exception as e:
                     st.error(f"Lỗi khi gọi ChatGPT: {e}")
         else:
