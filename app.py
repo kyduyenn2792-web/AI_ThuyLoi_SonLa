@@ -67,11 +67,11 @@ with col2:
                 st.markdown("### 📝 Kết quả:")
                 st.info(tra_loi)
                 
-                # NÚT TẢI FILE - KHÔNG BAO GIỜ THIẾU DẤU NGOẶC NỮA
+                # NÚT TẢI FILE - FIX LỖI CHIA SẺ TRÊN ĐIỆN THOẠI
                 st.divider()
                 word_data = tao_file_word(tra_loi, hoi, ten_ct)
                 st.download_button(
-                    label="📥 Tải Biên bản (File Word)",
+                    label="📥 Tải Biên bản (Gửi qua Zalo)",
                     data=word_data,
                     file_name=f"Bien_ban_{ten_ct}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
