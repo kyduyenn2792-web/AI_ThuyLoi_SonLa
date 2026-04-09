@@ -4,139 +4,111 @@ from openai import OpenAI
 import os
 from fpdf import FPDF
 
-# --- 1. CẤU HÌNH HỆ THỐNG ---
-st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La AI", layout="wide")
+# --- 1. CẤU HÌNH ---
+st.set_page_config(page_title="Hệ thống Thủy lợi Sơn La", layout="wide")
 
-# --- 2. HÀM TẠO BIÊN BẢN PDF TIẾNG VIỆT GỬI LÃNH ĐẠO ---
-from fpdf import FPDF # Đảm bảo dòng này ở trên đầu file
-
-def tao_pdf_bien_ban(tra_loi, cau_hoi, thong_tin_ct):
-    # Khởi tạo PDF bản tiêu chuẩn
+# --- 2. HÀM TẠO PDF (BẢN FIX LỖI CHIỀU NGANG) ---
+def tao_pdf_bien_ban(tra_loi, cau_hoi, ten_ct):
     pdf = FPDF()
     pdf.add_page()
     
-    # Nạp font chuẩn (Bỏ qua kiểm tra lỗi rườm rà)
-    font_path = "arial.ttf"
+    # Nạp font chuẩn
     font_name = "Arial"
-    if os.path.exists(font_path):
+    if os.path.exists("arial.ttf"):
         try:
-            pdf.add_font("ArialVN", "", font_path, unicode=True)
+            pdf.add_font("ArialVN", "", "arial.ttf")
             font_name = "ArialVN"
         except: pass
     
-    pdf.set_font(font_name, size=12)
-
-    # --- NỘI DUNG ---
-    # Dùng w=0 để nó tự lấy toàn bộ chiều ngang, ln=1 để xuống dòng
-    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=1, align='C')
-    pdf.cell(0, 10, txt="Doc lap - Tu do - Hanh phuc", ln=1, align='C')
+    pdf.set_font(font_name, size=14)
+    pdf.cell(0, 10, txt="CONG HOA XA HOI CHU NGHIA VIET NAM", ln=True, align='C')
     pdf.ln(10)
     
-    pdf.set_font(font_name, size=14)
-    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU THUY LOI", ln=1, align='C')
+    pdf.set_font(font_name, size=16)
+    pdf.cell(0, 10, txt="BIEN BAN TRA CUU NGHIEP VU", ln=True, align='C')
     pdf.ln(5)
     
     pdf.set_font(font_name, size=11)
-    ten_ho = thong_tin_ct.get('ten', 'Cong trinh Thuy loi')
-    
-    # Ghi đè trực tiếp nội dung
-    pdf.write(8, f"Cong trinh: {ten_ho}\n")
-    pdf.write(8, f"Cau hoi: {cau_hoi}\n")
+    # Dùng multi_cell(0, ...) là chìa khóa để KHÔNG bao giờ bị lỗi horizontal space
+    pdf.multi_cell(0, 8, txt=f"Cong trinh: {ten_ct}")
+    pdf.multi_cell(0, 8, txt=f"Cau hoi: {cau_hoi}")
     pdf.ln(5)
-    pdf.write(8, f"KET QUA TRA CUU:\n{tra_loi}\n")
+    pdf.multi_cell(0, 8, txt=f"Ket qua tra cuu: {tra_loi}")
     
     pdf.ln(10)
-    pdf.cell(0, 0, "", "T") # Vẽ đường kẻ ngang
-    pdf.ln(5)
-
-    # --- PHẦN KÝ TÊN (Dùng write để chống lỗi tràn lề) ---
-    pdf.write(8, "- Dai dien Chi nhanh Thuy loi so 5: ................................\n")
-    pdf.write(8, "- Can bo dia ban: ................................................\n")
-    pdf.write(8, "- Dai dien UBND phuong Chieng Coi: ...............................\n")
-    pdf.write(8, "- Dai dien BQL ban Hom: ...........................................\n")
-    pdf.write(8, "- Ho gia dinh vi pham: ............................................\n")
-    pdf.write(8, f"- Ngay lap bien ban: {pd.Timestamp.now().strftime('%d/%m/%Y')}\n")
+    pdf.cell(0, 8, txt="- Dai dien Chi nhanh Thuy loi so 5 (Ky ten)", ln=True)
+    pdf.cell(0, 8, txt="- Dai dien UBND phuong (Ky ten)", ln=True)
+    pdf.cell(0, 8, txt="- Nguoi lap bien ban (Ky ten)", ln=True)
     
-    pdf.ln(10)
-    pdf.cell(0, 10, txt="Nguoi lap bien ban: ...............................", ln=1, align='R')
-    
-    return pdf.output(dest='S').encode('latin-1') # Quan trọng: Encode để Streamlit nhận dạng
+    return pdf.output(dest='S')
 
-# --- 4. KIỂM TRA KEY & DỮ LIỆU ---
+# --- 3. HÀM NẠP DỮ LIỆU (FIX LỖI NAMEERROR) ---
+@st.cache_resource
+def nap_du_lieu_van_ban():
+    context = ""
+    if os.path.exists("data"):
+        from pypdf import PdfReader
+        for file in os.listdir("data"):
+            if file.endswith(".pdf"):
+                try:
+                    reader = PdfReader(os.path.join("data", file))
+                    for page in reader.pages:
+                        context += page.extract_text() + "\n"
+                except: continue
+    return context
+
+# --- 4. KẾT NỐI HỆ THỐNG ---
 if "OPENAI_API_KEY" in st.secrets:
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     if "context" not in st.session_state:
         st.session_state.context = nap_du_lieu_van_ban()
 else:
-    st.error("Lỗi: Chưa cấu hình OPENAI_API_KEY trong Secrets!")
+    st.error("Chưa có API Key!")
     st.stop()
 
-# --- 5. GIAO DIỆN CHÍNH ---
-st.title("🌊 Hệ thống Quản lý & Trợ lý AI Thủy Lợi Sơn La")
-
-col1, col2 = st.columns([4, 6])
+# --- 5. GIAO DIỆN ---
+st.title("🌊 Trợ lý AI Ngành Thủy Lợi (Sơn La)")
+col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.header("📍 Thông tin Công trình")
+    st.header("📍 Bản đồ & Thông số")
     try:
-        # Đọc file Excel từ thư mục specs
         file_excel = [f for f in os.listdir("specs") if f.endswith(".xlsx")][0]
         df = pd.read_excel(os.path.join("specs", file_excel))
-        df.columns = df.columns.str.strip() # Xóa khoảng trắng tên cột
+        df.columns = df.columns.str.strip()
 
-        # Chọn công trình theo cột "ten_cong_trinh"
-        ten_ct = st.selectbox("Chọn công trình cần báo cáo:", df['ten_cong_trinh'].unique())
-        row = df[df['ten_cong_trinh'] == ten_ct].iloc[0]
+        col_ten = df.select_dtypes(include=['object']).columns[0]
+        col_lat = [c for c in df.columns if 'lat' in c.lower() or 'vĩ' in c.lower()][0]
+        col_lon = [c for c in df.columns if 'lon' in c.lower() or 'kinh' in c.lower()][0]
+
+        ten_ct = st.selectbox("Chọn công trình:", df[col_ten].unique())
+        row = df[df[col_ten] == ten_ct].iloc[0]
         
-        # Hiển thị thông số chuẩn theo yêu cầu
-        st.success(f"🏗️ **Công trình:** {ten_ct}")
-        st.info(f"💧 **Dung tích:** {row['dung_tich']} | 📍 **Vị trí:** {row['vi_tri']}")
+        # Hiện mọi thông số trong Excel
+        for c in df.columns:
+            if c not in [col_lat, col_lon]:
+                st.write(f"**{c}:** {row[c]}")
         
-        # Bản đồ 3D Vệ tinh (Google Maps 3D Layer)
-        lat, lon = row['lat'], row['lon']
-        map_url = f"https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1000!2d{lon}!3d{lat}!2m3!1f45!2f45!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1svi!2s!4v123456789!5m2!1svi!2s"
-        st.components.v1.iframe(map_url, height=500)
-        
-        thong_tin_ct = {
-            "ten": ten_ct,
-            "dung_tich": row['dung_tich'],
-            "vi_tri": row['vi_tri']
-        }
-    except Exception as e:
-        st.warning(f"Đang đồng bộ dữ liệu Excel... (Lưu ý: Cần cột ten_cong_trinh, dung_tich, vi_tri, lat, lon)")
+        map_url = f"https://www.google.com/maps?q={row[col_lat]},{row[col_lon]}&output=embed&t=k"
+        st.components.v1.iframe(map_url, height=400)
+    except: st.warning("Đang tải dữ liệu...")
 
 with col2:
-    st.header("⚖️ Tra cứu Luật & Lập biên bản")
-    hoi = st.text_area("Nhập nội dung cần hỏi hoặc yêu cầu lập biên bản:", height=150, 
-                       placeholder="Ví dụ: Lập biên bản kiểm tra hồ đập dựa trên Thông tư 05 và Nghị định 114...")
-    
+    st.header("💬 Hỏi đáp Trợ lý AI")
+    hoi = st.text_input("Nhập câu hỏi:")
     if hoi:
-        with st.spinner("AI đang trích xuất dữ liệu pháp luật..."):
-            try:
-                # Giới hạn context để AI không bị "ngợp" dữ liệu
-                prompt_context = st.session_state.context[:4000]
-                
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": f"Bạn là trợ lý pháp luật Thủy lợi. Hãy trích xuất đúng, đủ các Thông tư, Nghị định từ dữ liệu sau để trả lời hoặc lập biên bản chuyên nghiệp: {prompt_context}"},
-                        {"role": "user", "content": f"Dựa trên công trình {ten_ct}, vị trí {row['vi_tri']}, hãy giải quyết: {hoi}"}
-                    ],
-                    temperature=0.3
-                )
-                
-                tra_loi = response.choices[0].message.content
-                st.markdown("### 📄 Nội dung trích xuất & Dự thảo biên bản:")
-                st.write(tra_loi)
-                
-                # --- NÚT XUẤT PDF GỬI LÃNH ĐẠO ---
-                st.markdown("---")
-                pdf_data = tao_pdf_bien_ban(tra_loi, hoi, thong_tin_ct)
-                st.download_button(
-                    label="📥 Tải Biên bản PDF (Gửi lãnh đạo)",
-                    data=pdf_data,
-                    file_name=f"Bien_ban_{ten_ct}.pdf",
-                    mime="application/pdf"
-                )
-            except Exception as e:
-                st.error(f"Lỗi hệ thống AI: {e}")
+        with st.spinner("AI đang trả lời..."):
+            res = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": f"Dữ liệu: {st.session_state.context[:3000]}"},
+                    {"role": "user", "content": hoi}
+                ]
+            )
+            tra_loi = res.choices[0].message.content
+            st.write(tra_loi)
+            
+            # HIỆN NÚT TẢI PDF
+            st.markdown("---")
+            pdf_data = tao_pdf_bien_ban(tra_loi, hoi, ten_ct)
+            st.download_button("📥 Tải Biên bản PDF", data=pdf_data, file_name="Bien_ban.pdf", mime="application/pdf")
