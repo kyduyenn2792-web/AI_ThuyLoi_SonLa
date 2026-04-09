@@ -5,7 +5,7 @@ from openai import OpenAI
 import pypdf
 
 st.set_page_config(page_title="AI Thủy Lợi - ChatGPT Pro", layout="wide")
-st.title("🌊 Trợ lý AI Ngành Thủy Lợi (Phiên bản ChatGPT)")
+st.title("🌊 Trợ lý AI Ngành Thủy Lợi")
 
 # --- HÀM ĐỌC PDF (Xử lý thông minh) ---
 def doc_pdf_thuy_loi():
